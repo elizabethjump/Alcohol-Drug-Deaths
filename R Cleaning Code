@@ -29,7 +29,7 @@ options(scipen = 999)
 
 ## set up file paths you'll need:
 ```{r}
-# file paths for: county VRBIS, reallocates VRBIS, cleaned resident data set, cleaned non-resident data set
+# file paths for: location of county VRBIS data, location of reallocates VRBIS data, location to save cleaned resident data set, location to save cleaned non-resident data set
 County_path <- ""
 reallocates_path <- ""
 resident_clean <- ""
