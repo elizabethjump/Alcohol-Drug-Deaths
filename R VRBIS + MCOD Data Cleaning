@@ -36,7 +36,7 @@ reallocates_path <- ""
 mcod_path <- ""
 resident_clean <- ""
 nonres_clean <- ""
-
+```
 
 ## import csv files for deaths in SMC into R
 ```{r import file}
