@@ -1,4 +1,3 @@
-# VRBIS-Cleaning
-Code to clean VRBIS death data 
+# Alcohol-Drug Deaths
 
-This code reads in VRBIS files, sorts based on county of residence and performs other basic cleaning tasks
+This project contains code and files to clean VRBIS data, merge VBRIS data with multiple cause of death files (if needed) and to get drug and alcohol numbers for CSTE metrics
