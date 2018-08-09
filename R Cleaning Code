@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # check to see the default library that's set
 .libPaths()
 
-# can select the primary libpath using: 
+# can select the primary libpath using this code. Replace the [2] with the number libpath you want to use
 .libPaths(.libPaths()[2])
 
 # install and save these packages:
