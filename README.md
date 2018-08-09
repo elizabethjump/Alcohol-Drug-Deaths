@@ -4,6 +4,6 @@ This project contains code and files to clean VRBIS data, merge VBRIS data with 
 
 All of the files are in R markdown and should be pasted into R markdown to run. 
 
-Common acronyms used:
+Run either of the cleaning files first (VRBIS Data Cleaning or VRBIS + MCOD Data Cleaning). Those scripts will create datasets to use in the Alcohol and Drug scripts. 
 
-MCOD -> multiple cause of death; refers to the files that store MCOD data in them. Starting in 2016, these are already in BVRBIS files, but before, they are separate and need to be merged with VRBIS to get multiple cause codes for VRBIS deaths
+
