@@ -7,7 +7,7 @@ author: "Beth Jump"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### set up the environment
+## set up the environment
 ```{r }
 # check to see the default library that's set
 .libPaths()
@@ -22,20 +22,22 @@ library("stringr")
 library("dplyr")
 library("sas7bdat")
 library("eeptools")
+
+#disable scientific notation so the SFN & LFN's are read in as numbers not in scientific notation
+options(scipen = 999)
+```
+
+## set up file paths you'll need:
+```{r}
+# file paths for: county VRBIS, reallocates VRBIS, cleaned resident data set, cleaned non-resident data set
+County_path <- ""
+reallocates_path <- ""
+resident_clean <- ""
+nonres_clean <- ""
 ```
 
 ## import csv files for deaths from VRBIS into R
 ```{r import file}
-#disables scientific notation so the SFN & LFN's are read in as numbers not in scientific notation
-options(scipen = 999)
-
-# file path for county deaths
-County_path <- ""
-
-# file path for reallocated deaths
-reallocates_path <- ""
-
-# input data (R reads the VRBIS files as csv)
 county_deaths <- read.csv(County_path, header = F)
 Reall_deaths <- read.csv(reallocates_path, header = F)
 ```
@@ -54,7 +56,7 @@ colnames(county_deaths) <- vars
 colnames(Reall_deaths) <- vars
 ```
 
-# split out the data into three datasets: residents who died in the county, residents who died outside of the county (reallocates) and non-residents who died in the county
+## split out the data into three datasets: residents who died in the county, residents who died outside of the county (reallocates) and non-residents who died in the county
 ```{r}
 # only keep deaths for county residents (ex: San Mateo County is county code 41)
 county_deaths_only <- county_deaths[which (county_deaths$rescountycdphcode_59 == "41"),]
@@ -112,7 +114,7 @@ dups <- duplicated(comb_deaths)
 table(dups)
 ```
 
-# add a column for death month
+## add a column for death month
 ```{r}
 # for SMC deaths
 comb_deaths$dod_test <- as.Date(comb_deaths$dod_20, format = "%m/%d/%Y")
@@ -123,7 +125,7 @@ nonres1$dod_test <- as.Date(nonres1$dod_20, format = "%m/%d/%Y")
 nonres1$deathmo <- as.numeric(substring(nonres1$dod_test,6,7))
 ```
 
-# split the ICD10 codes out into string and numeric columns so we can match on strings and use the numbers to capture a range of codes
+## split the ICD10 codes out into string and numeric columns so we can match on strings and use the numbers to capture a range of codes
 ```{r}
 # make sure codes are in the short, not decimal format
 comb_deaths$finalICDCode_144 <- as.character(comb_deaths$finalICDCode_144)
@@ -140,8 +142,8 @@ nonres1$icd_char <- as.character(substring(nonres1$finalICDCode_144,1,1))
 nonres1$icd_num <- as.numeric(substring(nonres1$finalICDCode_144,2))
 ```
 
-# write to file
+## write to file
 ```{r}
-write.csv(comb_deaths, "")
-write.csv(nonres1, "")
+write.csv(comb_deaths, resident_clean)
+write.csv(nonres1, nonres_clean)
 ```
