@@ -33,20 +33,16 @@ options(scipen = 999)
 # file paths for: location of county VRBIS data, location of reallocates VRBIS data, location of mcod data location to save cleaned resident data set, location to save cleaned non-resident data set
 County_path <- ""
 reallocates_path <- ""
-mcod <- ""
+mcod_path <- ""
 resident_clean <- ""
 nonres_clean <- ""
 
 
 ## import csv files for deaths in SMC into R
 ```{r import file}
-
-# input data (R reads the VRBIS files as csv)
 county_deaths <- read.csv(County_path, header = F)
 Reall_deaths <- read.csv(reallocates_path, header = F)
-
-## get MCOD data
-mcod <- read.csv("", header = T)
+mcod <- read.csv(mcod_path, header = T)
 ```
 
 ## clean the data 
@@ -109,10 +105,10 @@ county_deaths_only1 <- county_deaths_only[,c(1:5,8,12,19,20,27,34,45:47,51,55:57
 Reall_deaths1 <- Reall_deaths[,c(1:5,8,12,19,20,27,34,45:47,51,55:57,64, 66,135,137,139,141,143,144,151,168,176)]
 county_nonres1 <- county_nonres[,c(1:5,8,12,19,20,27,34,45:47,51,55:57,64, 66,135,137,139,141,143,144,151,168,176)]
 
-# convert zip code from factor to numeric in the SMC dataset so that we can combine the datasets without errors 
+# convert zip code from factor to numeric in the county dataset so that we can combine the datasets without errors 
 Reall_deaths1$reszipcode5_66 <-as.factor(Reall_deaths1$reszipcode5_66)
 
-# add the two dataframes together (assuming that no one is in both datasets)
+# add the two dataframes together
 single_cod <- rbind(county_deaths_only1, Reall_deaths1, stringsAsFactors = FALSE)
 
 # confirm no duplicates
@@ -134,12 +130,12 @@ mcod1$dod <- as.Date(with(mcod1, paste(current_yr, death_mo, death_day, sep = "-
 # convert sex to character
 mcod1$sex <- as.character(mcod1$sex)
 
-# add zeros to the right so all codes have 4 characters
+# add zeros to the right of the ICD code so all codes have 4 characters (codes have 3-4 characters normally)
 mcod1$icd10 <- str_replace_all(string= mcod1$icd10, pattern=" ", repl="")
 mcod1$icd10 <- stri_pad_right(mcod1$icd10, width = 4, pad = "0")
 ```
 
-## make a new variable for birthday and deathday for single cause of death data
+## clean the single_cod dataset (VRBIS data) so you can merge with mcod
 ```{r}
 # convert birthday so it's in a date format
 single_cod$dob <- as.Date(single_cod$dob_8, format = "%m/%d/%Y")
@@ -150,7 +146,7 @@ single_cod$dod <- as.Date(single_cod$dod_20, format = "%m/%d/%y")
 # rename sex to just sex
 names(single_cod)[names(single_cod) == 'sex_19'] <- 'sex'
 
-# convert sex to character
+# convert sex to character (from factor)
 single_cod$sex <- as.character(single_cod$sex)
 
 # convert the state file number to a character so you can see the whole thing
@@ -159,33 +155,28 @@ single_cod$SFN_1 <- as.character(single_cod$SFN_1)
 # pull out last 6 digits to get the cert number that is also used in the MCOD files 
 single_cod$SFN_1 <- as.numeric(substring(single_cod$SFN_1,8))
 
-# recode the ICD10 code as 'icd10' to match MCOD data
+# rename the ICD10 variable as 'icd10' to match MCOD data
 names(single_cod)[names(single_cod) == 'finalICDCode_144'] <- 'icd10'
 
-# make the icd10 codes character fields & pad zeros on the right
+# make the icd10 codes character fields & pad zeros on the right so all codes are 4 characters
 single_cod$icd10 <- as.character(single_cod$icd10)
 single_cod$icd10 <- stri_pad_right(single_cod$icd10, width = 4, pad = "0")
 ```
 
 ## merge the mcod dataset with the overall death dataset
 ```{r}
-## add the mcod data to the VRBIS 
+# add the mcod data to the VRBIS 
 comb_deaths = single_cod %>% 
   left_join(mcod1, by = c("dob", "dod", "sex", "icd10")) 
 
 ## make sure the merge worked correctly by comparing cert number (mcod) and SFN (VRBIS) between the two files
-# make sure both are the same data type
-class(comb_deaths$cert_num)
-class(comb_deaths$SFN_1)
-
 # convert cert num to numeric
 comb_deaths$cert_num <- as.numeric(comb_deaths$cert_num)
 
-# make sure the two are equal
 ## move the SFN_1 number and cert number so they're next to one another
 comb_deaths <- comb_deaths[,c(1,32,2:31,33:55)]
 
-## create an indicator variable for those that match
+# create an indicator variable for those that match
 comb_deaths$match <- ifelse((comb_deaths$cert_num == comb_deaths$SFN_1), 1, NA)
 
 # look at records that don't match 
@@ -200,23 +191,16 @@ county_nonres1$deathmo <- as.numeric(substring(county_nonres1$dod_20,1,2))
 
 # split the ICD10 codes out into string and numeric columns so we can match on strings and use the numbers to capture a range of codes
 ```{r}
-# make sure codes are in the short, not decimal format
+# make sure codes are in the character format
 comb_deaths$icd10 <- as.character(comb_deaths$icd10)
 
 # split ICD code into character & numeric columns
 comb_deaths$icd_char <- as.character(substring(comb_deaths$icd10,1,1))
 comb_deaths$icd_num <- as.numeric(substring(comb_deaths$icd10,2))
-
-# make sure codes are in the short, not decimal format
-county_nonres1$finalICDCode_144 <- as.character(county_nonres1$finalICDCode_144)
-
-# split ICD code into character & numeric columns
-county_nonres1$icd_char <- as.character(substring(county_nonres1$finalICDCode_144,1,1))
-county_nonres1$icd_num <- as.numeric(substring(county_nonres1$finalICDCode_144,2))
 ```
 
 # write to file
 ```{r}
-write.csv(comb_deaths, "")
-write.csv(county_nonres1, "")
+write.csv(comb_deaths, resident_clean)
+write.csv(county_nonres1, nonres_clean)
 ```
