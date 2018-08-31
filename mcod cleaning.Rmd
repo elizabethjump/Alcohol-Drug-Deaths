@@ -33,14 +33,14 @@ mcod_clean <- ""
 ```
 
 ## read in the files 
-## reading in is going to take a long time because you have to split the data into columns
+### reading in is going to take a long time because you have to split the data into columns
 ```{r}
 mcod <- read.fwf(file = mcod_raw, fill = TRUE,width = c(2,1,6,2,7,1,1,2,3,2,1,2,2,2,3,5,1,1,2,4,1,1,2,2,2,2,2,1,1,2,2,1,4,1,2,2,2,2,1,1,1,2,2,4,2,2,4,4,1,1,1,1,1,31,1,1,1,1,4,3,1,3,3,2,1,2,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,36,2,1,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,1,2,1,1,1,1,3,30,3,2))
 
 colnames(mcod) <- c("resvd", "rpt_area", "cert_num", "resvd", "seq_num", "resid", "resident_stat", "state_occur", "county_occur", "state_occur_exp", "county_pop", "state_residence", "country_residence", "state_residence_recode", "county_residence", "city_residence", "city_pop", "metrop", "state", "PMSA/MSA", "county_pop", "PMSA/MSA_pop", "CMSA",  "birth_state", "birth_country", "birth_state","educ_89", "educ_03", "educ_flag", "death_mo", "death_day", "sex","age_detail", "age_flag","age_recode52", "age_recode27","age_recode12", "infant_age","death_loc", "marital","death_dow", "birth_mo", "birth_day", "birth_year", "data_mo", "data_day", "data_year", "current_yr", "injury", "manner", "dispo_method", "autopsy", "certifier","rsvd","tobacco", "pregnancy", "activity", "inj_loc", "icd10", "icd358","rsvd", "icd113","icd130_infant", "icd39","rsvd", "ea_num",  "ea1","ea2","ea3","ea4","ea5","ea6","ea7","ea8","ea9","ea10","ea11","ea12","ea13","ea14","ea15","ea16","ea17","ea18","ea19","ea20", "rsvd","ra_num","rsvd","ra1","ra2","ra3","ra4","ra5","ra6","ra7","ra8","ra9","ra10","ra11","ra12","ra13","ra14","ra15","ra16","ra17","ra18","ra19","ra20", "rsvd", "race","race_flag", "race_imput", "race_recode3","race_recode5", "multi_race_code","rsvd","hisp_orig","hisp_recode")
 ```
 
-# Filter out extra info so we only have the SMC data
+## filter out extra info so we only have the SMC data
 ```{r}
 mcodCA <- mcod[mcod$state_residence == "CA",]
 
