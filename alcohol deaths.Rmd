@@ -8,7 +8,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### set up the environment
+## set up the environment
 ```{r }
 # check to see the default library that's set
 .libPaths()
@@ -34,12 +34,12 @@ prim_code_or_text <- ""
 any_code_or_text <- ""
 ```
 
-# read in cleaned data sets that you created using a cleaning script (either VRBIS or VRBIS + MCOD)
+## read in cleaned data sets that you created using a cleaning script (either VRBIS or VRBIS + MCOD)
 ```{r}
 comb_deaths <- read.csv(res_path)
 ```
 
-# do some additional cleaning so the following steps work
+## do some additional cleaning so the following steps work
 ```{r}
 # make the icd 10 number field only 2 characters
 comb_deaths$icd_num <- substring(comb_deaths$icd_num,1,2)
@@ -58,7 +58,7 @@ comb_deaths$ra10 <- as.character(substring(comb_deaths$ra10,1,3))
 comb_deaths$ra11 <- as.character(substring(comb_deaths$ra11,1,3)) 
 ```
 
-# look at alcohol deaths by underlying cause only
+## look at alcohol deaths by underlying cause only
 ```{r}
 # find deaths that have an underlying cause of K70.x (alcoholic liver disease)
 comb_deaths$alcohol <- NA
@@ -68,7 +68,7 @@ comb_deaths$alcohol <- ifelse(comb_deaths$icd_char == "K" & comb_deaths$icd_num 
 alc_codes <- comb_deaths[!is.na(comb_deaths$alcohol),]
 ```
 
-# look at alcohol deaths by keywords
+## look at alcohol deaths by keywords
 ```{r}
 alc_key <- c("alcoholic liver disease", "alcohol cirrhosis", "ethanol", "alcoholism", "ethanolism", "ethyl alcohol", "chronic alcohol", "chronic ethanol", "acute alcohol", "acute ethanol", "alcohol dependence", "ethanol dependence", "alcohol abuse", "ethanol abuse", "alcohol intoxication", "ethanol intoxication", "ethanol toxicity", "alcoholic dementia", "alcohol dependency", "ethanol dependency", "alcohol withdrawal", "alcoholic consumption", "due to alcohol", "due to ethanol")
 
@@ -86,12 +86,12 @@ alc_text <- rbind(alc_135, alc_137, alc_139, alc_141, alc_151, stringsAsFactors 
 alc_text <- unique(alc_text)
 ```
 
-# identify deaths with a K70 in any of the multiple cause fields
+## identify deaths with a K70 in any of the multiple cause fields
 ```{r}
 alcohol_K70 <- comb_deaths[(comb_deaths$ra1 == "K70" | comb_deaths$ra2 == "K70" | comb_deaths$ra3 == "K70" | comb_deaths$ra4 == "K70" | comb_deaths$ra5 == "K70" | comb_deaths$ra6 == "K70" | comb_deaths$ra7 == "K70" | comb_deaths$ra8 == "K70" | comb_deaths$ra9 == "K70" | comb_deaths$ra10 == "K70" | comb_deaths$ra11 == "K70"),]
 ```
 
-# look at alcohol deaths by underlying code and keyword and multiple cause code
+## look at alcohol deaths by underlying code and keyword and multiple cause code
 ```{r}
 alc_code_or_text <- rbind(alc_codes, alc_text, stringsAsFactors = F)
 
@@ -101,7 +101,7 @@ alc_comb <- rbind(alc_code_or_text, alcohol_K70, stringsAsFactors = F)
 alc_comb_final <- unique(alc_comb)
 ```
 
-# split into 6 month increments
+## split into 6 month increments
 ```{r}
 # residents with underlying code K70, K73, K74
 code_jan <- alc_codes[(alc_codes$deathmo >=1 & alc_codes$deathmo <=6),]
@@ -116,7 +116,7 @@ codetmcod_jan <- alc_comb_final[(alc_comb_final$deathmo >=1 & alc_comb_final$dea
 codetmcod_jul <- alc_comb_final[(alc_comb_final$deathmo >=7 & alc_comb_final$deathmo <=12),]
 ```
 
-# create files with deaths identified above 
+## create files with deaths identified above 
 ```{r}
 write.csv(alc_codes, prim_code)
 write.csv(alc_code_or_text, prim_code_or_text)
