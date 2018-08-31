@@ -1,0 +1,149 @@
+---
+title: "VRBIS Data Cleaning"
+author: "Beth Jump"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## set up the environment
+```{r }
+# check to see the default library that's set
+.libPaths()
+
+# can select the primary libpath using this code. Replace the [2] with the number libpath you want to use
+.libPaths(.libPaths()[2])
+
+# install and save these packages:
+install.packages(c("icd", "stringr", "dplyr", "sas7bdat", "eeptools"))
+library("icd") 
+library("stringr") 
+library("dplyr")
+library("sas7bdat")
+library("eeptools")
+
+#disable scientific notation so the SFN & LFN's are read in as numbers not in scientific notation
+options(scipen = 999)
+```
+
+## set up file paths you'll need:
+```{r}
+# file paths for: location of county VRBIS data, location of reallocates VRBIS data, location to save cleaned resident data set, location to save cleaned non-resident data set
+County_path <- ""
+reallocates_path <- ""
+resident_clean <- ""
+nonres_clean <- ""
+```
+
+## import csv files for deaths from VRBIS into R
+```{r import file}
+county_deaths <- read.csv(County_path, header = F)
+Reall_deaths <- read.csv(reallocates_path, header = F)
+```
+
+## add column names to the datasets 
+```{r cleaning}
+# create a character vector with labels of columns
+var1 <- c("SFN_1", "LRN_2", "fname_3", "mname_4", "lname_5", "recstatus_6", "trunccode_7", "dob_8","byyyy_9", "bmm_10", "bdd_11", "ageyears_12", "agemons_13", "agedays_14", "agehours_15", "agemins_16", "agetype_17", "ageunit_18", "sex_19", "dod_20", "dhour_21", "fnd_22", "est_23", "dyyyy_24", "dmm_25", "ddd_26","birthstateforeigntext_27", "birthstateforeigncode_28", "birthcountrytext_29", "birthstateprovince_30", "ssn_31", "armedforces_32", "maritalstatus_33", "educlevelcacode_34", "educlevelnchscode_35", "hispanic_36", "hispanictypecode_37", "hispanicspecifytext_38", "race1code_39", "race2code_40", "race3code_41", "race1text_42", "race2text_43", "race3text_44", "race1codefinal_45", "race2codefinal_46", "race3codefinal_47", "race1textnchs_48", "race2textnchs_49", "race3textnchs_50", "multirace_51", "occupation_52", "industry_53", "yearsinocc_54", "resstreetnum_55", "resstreetname_56", "rescitytext_57", "resccode_58", "rescountycdphcode_59", "rescountytext_60", "rescountynchscode_61", "rescountyfinalcode_62", "rescountyfinaltext_63", "rescountycdphcode2_64", "rescountynchscode2_65", "reszipcode5_66", "reszipcode4_67", "stateForeignCountryText_68", "stateForeignCountrycode_69", "rescountrycode_70", "resstaeprovince_71", "yrsincounty_72", "rescensustract_73", "reslatitude_74", "reslongitude_75", "informantrel_76", "informantfname_77", "informantmname_78", "informantlname_79", "informantmailstreetnum_80", "informantstreetname_81", "informantapt_82", "informantcity_83", "informantstate_84", "informantzip5_85", "informantzip4_86", "survspousefname_87", "survspousemname_88", "survspouselname_89", "fatherfname_90", "fathermname_91", "fatherlname_92", "fatherBirthStateText_93", "fatherBirthStateCode_94", "fatherBirthCountryCode_95", "fatherBirthCountryCodeFinal_96", "motherfname_97", "mothermname_98", "motherlname_99", "motherBirthStateText_100", "motherBirthStateCode_101", "motherBirthCountryCode_102", "fatherBirthCountryCodeFinal_103", "dispDate_104", "dispPlacedesc_105", "dispPlaceStreetNum_106", "dispPlaceStreetName_107", "dispPlaceStreetCityCode_108", "dispPlaceStreetState_109", "dispPlaceStreetStateCode_110", "dispPlaceStreetCountryCode_111", "dispPlaceStreetZip5_112", "dispPlaceStreetZip4_113", "dispTypeText_114", "dispTypeCode_115", "embalmerSig_116", "embalmerLic_117", "funeralHomeName_118", "funeralHomeLic_119", "localRegstrarName_120", "localRegDate_121", "deathFacilityNameLocation_122", "deathInHospCode_123", "deathOutHospCode_124", "placeOfDeathFacility_125", "deathCountyText_126", "deathCountyCode_127", "deathCountyCode2_128", "LocalRegDistrictCode_129", "deathState_130", "deathCountry_131", "placeDeathStreetNum_132", "placeDeathStreetName_133", "cityofPlaceDeath_134", "causeOfDeath_135", "intervalOnsetDeath_136", "causeOfDeath1_137", "intervalOnsetDeath1_138", "causeOfDeath2_139", "intervalOnsetDeath2_140", "causeOfDeath3_141", "intervalOnsetDeath3_142", "prelimCode_143", "finalICDCode_144", "finalICDCodeDate_145", "Coroner_146", "coronerRefNum_147", "biopsy_148", "autopsy_149", "autopsyUsed_150", "otherSigCond_151", "operation_152", "operationCode_153", "pregStatus_154", "datePhyAtt_155", "datePhySawAlive_156", "certifierSig_157", "certifierNameTitle_158", "certifierLic_159", "certifierSigDate_160", "attPhyName_161", "attPhyStreetNum_162", "attPhyStreetName_163", "attPhyCity_164", "attPhyState_165", "attPhyZip5_166", "attPhyZip4_167", "mannerOfDeath_168", "injuredAtWork_169", "injuryDate_170", "injuryYear_171", "injuryMonth_172", "injuryDay_173", "injuryHour_174", "placeInjuryText_175", "placeInjuryCode_176", "envirPlaceInjuryCode_177", "injuryDesc_178", "injPLaceStreetNum_179", "injPLaceStreetName_180", "injPLaceCity_181", "injPLaceState_182", "injPLaceZip5_183", "injPLaceZip4_184", "coronerSig_185", "coronerSigDate_186", "coronerNameTitle_187","certifierType_188", "stateRegDate_189", "monthProcessed_190", "exportDate_191", "rescensustract_192", "reslatitude_193", "reslongitude_194", "deathcensustract_195", "deathlatitude_196", "deathlongitude_197", "injurycensustract_198", "injurylatitude_199")
+
+var2 <- c("injurylongitude_200", "ea1", "ea2", "ea3", "ea4", "ea5", "ea6", "ea7", "ea8", "ea9", "ea10", "ea11", "ea12", "ea13", "ea14", "ea15", "ea16", "ea17", "ea18", "ea19", "ea20", "ra1", "ra2", "ra3", "ra4", "ra5", "ra6", "ra7", "ra8", "ra9", "ra10", "ra11", "ra12", "ra13", "ra14", "ra15", "ra16", "ra17", "ra18", "ra19", "ra20", "exportdate")
+
+vars <- c(var1, var2)
+
+# add the column names to each dataset
+colnames(county_deaths) <- vars
+colnames(Reall_deaths) <- vars
+```
+
+## split out the data into three datasets: residents who died in the county, residents who died outside of the county (reallocates) and non-residents who died in the county
+```{r}
+# only keep deaths for county residents (ex: San Mateo County is county code 41)
+county_deaths_only <- county_deaths[which (county_deaths$rescountycdphcode_59 == "41"),]
+
+# create separate dataset for non-residents who died here
+nonres <- county_deaths[(county_deaths$rescountycdphcode_59 != "41" & county_deaths$deathCountyCode_127 == 41),]
+
+# check distribution of reallocation deaths to make sure all have the correct county code 
+table(county_deaths_only$rescountycdphcode_59)
+table(Reall_deaths$rescountycdphcode_59)
+```
+
+## Pull out variables for top death analysis. Will keep columns:
+  1. state file number
+  2. local reg number
+  3. first name
+  4. middle name
+  5. last name
+  8. DOB
+  12. Age in years
+  19. Sex
+  20. Date of death
+  27. Birth state/foreign country
+  34. Highest education level
+  45-47. Race/ethnicity codes
+  51. Multi-race status
+  55-57. Address
+  64. County code (41)
+  66. zip code
+  135. primary cause of death (text)
+  137. primary cause of death (text)
+  139. primary cause of death 2 (text)
+  141. primary cause of death 3 (text)
+  143. preliminary cause of death
+  144. final case of death (ICD 10 code)
+  151. Other signifcant conditions
+  168. Manner of death
+  176. Place of injury
+  221-231. multiple cause of death codes 
+
+```{r  subset and combine 2 sets}
+# subset both datasets so they only have the columns listed above
+county_deaths_only1 <- county_deaths_only[,c(1:5,8,12,19,20,27,34,45:47,51,55:57,64,66,135,137,139,141,143,144,151,168,176,221:231)]
+Reall_deaths1 <- Reall_deaths[,c(1:5,8,12,19,20,27,34,45:47,51,55:57,64, 66,135,137,139,141,143,144,151,168,176,221:231)]
+nonres1 <- nonres[,c(1:5,8,12,19,20,27,34,45:47,51,55:57,64, 66,135,137,139,141,143,144,151,168,176,221:231)]
+
+# convert zip code from factor to numeric in the SMC dataset so that we can combine the datasets without errors 
+Reall_deaths1$reszipcode5_66 <-as.factor(Reall_deaths1$reszipcode5_66)
+
+# add the two dataframes together to get one dataframe with all deaths (local and reallocates)
+comb_deaths <- rbind(county_deaths_only1, Reall_deaths1, stringsAsFactors = FALSE)
+
+# confirm no duplicates
+dups <- duplicated(comb_deaths)
+table(dups)
+```
+
+## add a column for death month
+```{r}
+# for SMC deaths
+comb_deaths$dod_test <- as.Date(comb_deaths$dod_20, format = "%m/%d/%Y")
+comb_deaths$deathmo <- as.numeric(substring(comb_deaths$dod_test,6,7))
+
+# for non-resident deaths
+nonres1$dod_test <- as.Date(nonres1$dod_20, format = "%m/%d/%Y")
+nonres1$deathmo <- as.numeric(substring(nonres1$dod_test,6,7))
+```
+
+## split the ICD10 codes out into string and numeric columns so we can match on strings and use the numbers to capture a range of codes
+```{r}
+# make sure codes are in the short, not decimal format
+comb_deaths$finalICDCode_144 <- as.character(comb_deaths$finalICDCode_144)
+
+# split ICD code into character & numeric columns
+comb_deaths$icd_char <- as.character(substring(comb_deaths$finalICDCode_144,1,1))
+comb_deaths$icd_num <- as.numeric(substring(comb_deaths$finalICDCode_144,2))
+
+# make sure codes are in the short, not decimal format
+nonres1$finalICDCode_144 <- as.character(nonres1$finalICDCode_144)
+
+# split ICD code into character & numeric columns
+nonres1$icd_char <- as.character(substring(nonres1$finalICDCode_144,1,1))
+nonres1$icd_num <- as.numeric(substring(nonres1$finalICDCode_144,2))
+```
+
+## write to file
+```{r}
+write.csv(comb_deaths, resident_clean)
+write.csv(nonres1, nonres_clean)
+```
