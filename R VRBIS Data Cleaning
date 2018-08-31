@@ -1,6 +1,7 @@
 ---
 title: "VRBIS Data Cleaning"
 author: "Beth Jump"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
