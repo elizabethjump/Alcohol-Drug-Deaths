@@ -69,7 +69,7 @@ table(county_deaths_only$rescountycdphcode_59)
 table(Reall_deaths$rescountycdphcode_59)
 ```
 
-## Pull out variables for top death analysis. Will keep columns:
+## pull out variables for top death analysis - keep columns:
   1. state file number
   2. local reg number
   3. first name
