@@ -7,7 +7,7 @@ author: "Beth Jump"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### set up the environment
+## set up the environment
 ```{r }
 # check to see the default library that's set
 .libPaths()
@@ -59,7 +59,7 @@ colnames(county_deaths) <- vars
 colnames(Reall_deaths) <- vars
 ```
 
-# split out the data into three datasets: residents who died in the county, residents who died outside of the county (reallocates) and non-residents who died in the county
+## split out the data into three datasets: residents who died in the county, residents who died outside of the county (reallocates) and non-residents who died in the county
 ```{r}
 # only keep deaths for county residents (ex: San Mateo County is county code 41)
 county_deaths_only <- county_deaths[which (county_deaths$rescountycdphcode_59 == "041"),]
