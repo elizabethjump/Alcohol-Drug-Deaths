@@ -119,6 +119,11 @@ table(dups)
 # for county resident deaths
 comb_deaths$dod_test <- as.Date(comb_deaths$dod_20, format = "%m/%d/%Y")
 comb_deaths$deathmo <- as.numeric(substring(comb_deaths$dod_test,6,7))
+
+
+# for non-resident deaths
+nonres1$dod_test <- as.Date(nonres1$dod_20, format = "%m/%d/%Y")
+nonres1$deathmo <- as.numeric(substring(nonres1$dod_test,6,7))
 ```
 
 ## split the ICD10 codes out into string and numeric columns so we can match on strings and use the numbers to capture a range of codes
