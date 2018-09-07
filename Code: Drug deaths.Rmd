@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### set up the environment
+## set up the environment
 ```{r }
 # check to see the default library that's set
 .libPaths()
@@ -33,12 +33,12 @@ res_path <- "J:/Beth/Death Data/Resident death data sets/2016_resident_deaths.tx
 level_one <- ""
 ```
 
-# read in cleaned data sets that you created using a cleaning script (either VRBIS or VRBIS + MCOD)
+## read in cleaned data sets that you created using a cleaning script (either VRBIS or VRBIS + MCOD)
 ```{r}
 comb_deaths <- read.csv(res_path)
 ```
 
-# do some additional cleaning so the following steps work
+### do some additional cleaning so the following steps work
 ```{r}
 # make the icd_num field only 2 characters
 comb_deaths$icd_num <- as.numeric(substring(comb_deaths$icd_num,1,2))
@@ -57,7 +57,7 @@ comb_deaths$ra10 <- as.character(substring(comb_deaths$ra10,1,4))
 comb_deaths$ra11 <- as.character(substring(comb_deaths$ra11,1,4)) 
 ```
 
-# LEVEL 1: Get counts 
+## LEVEL 1: Get counts 
 ### find all deaths with a primary code of: X40-X44, X60-X64, X85, Y10-Y14
 ```{r}
 # add a variabe for the drug deaths
@@ -89,7 +89,7 @@ drug_text <- rbind(drug_135, drug_137, drug_139, drug_141, drug_151, one_c, stri
 two_c <- unique(drug_text)
 ```
 
-# split into half year increments
+### split into half year increments
 ```{r}
 # principal codes
 one_a <- one_c[(one_c$deathmo >= 1 & one_c$deathmo <=6),]
@@ -100,20 +100,20 @@ two_a <- two_c[(two_c$deathmo >= 1 & two_c$deathmo <=6),]
 two_b <- two_c[(two_c$deathmo >= 7 & two_c$deathmo <=12),]
 ```
 
-## look at R99 causes of death (if you want)
+### look at R99 causes of death (if you want)
 ```{r}
 R99 <- comb_deaths[comb_deaths$finalICDCode_144 == "R99",]
 ```
 
-## write to file
+### write to file
 ```{r}
 write.csv(drug_text_code, level_one)
 ```
 
-# LEVEL 2: Multiple causes of death
-## you need to have multiple cause of death information for this level 
+## LEVEL 2: Multiple causes of death
+### you need to have multiple cause of death information for this level 
 
-## get number of deaths with code T43.6
+### get number of deaths with code T43.6
 ```{r}
 # among those classified as overdose deaths (by code in level 1), find those with a T436 code
 three_c <- one_c[(one_c$ra1 == "T436" | one_c$ra2 == "T436" | one_c$ra3 == "T436" | one_c$ra4 == "T436" | one_c$ra5 == "T436" | one_c$ra6 == "T436" | one_c$ra7 == "T436" | one_c$ra8 == "T436" | one_c$ra9 == "T436" | one_c$ra10 == "T436" | one_c$ra11 == "T436"),]
@@ -131,7 +131,7 @@ four_a <- four_c[(four_c$deathmo >= 1 & four_c$deathmo <=6),]
 four_b <- four_c[(four_c$deathmo >= 7 & four_c$deathmo <=12),]
 ```
 
-## get number of deaths with code T40.1
+### get number of deaths with code T40.1
 ```{r}
 # among those classified as overdose deaths (by code in level 1), look for those with T401 code
 five_c <- one_c[(one_c$ra1 == "T401" | one_c$ra2 == "T401" | one_c$ra3 == "T401" | one_c$ra4 == "T401" | one_c$ra5 == "T401" | one_c$ra6 == "T401" | one_c$ra7 == "T401" | one_c$ra8 == "T401" | one_c$ra9 == "T401" | one_c$ra10 == "T401" | one_c$ra11 == "T401"),]
@@ -149,7 +149,7 @@ six_a <- six_c[(six_c$deathmo >= 1 & six_c$deathmo <=6),]
 six_b <- six_c[(six_c$deathmo >= 7 & six_c$deathmo <=12),]
 ```
 
-## get number of deaths with code T40.4
+### get number of deaths with code T40.4
 ```{r}
 # among those classified as overdose deaths (by code in level 1), look for those with T404 code
 seven_c <- one_c[(one_c$ra1 == "T404" | one_c$ra2 == "T404" | one_c$ra3 == "T404" | one_c$ra4 == "T404" | one_c$ra5 == "T404" | one_c$ra6 == "T404" | one_c$ra7 == "T404" | one_c$ra8 == "T404" | one_c$ra9 == "T404" | one_c$ra10 == "T404" | one_c$ra11 == "T404"),]
@@ -167,7 +167,7 @@ eight_a <- eight_c[(eight_c$deathmo >= 1 & eight_c$deathmo <=6),]
 eight_b <- eight_c[(eight_c$deathmo >= 7 & eight_c$deathmo <=12),]
 ```
 
-## get number of deaths with code T50.9, but without codes T36-T50.8
+### get number of deaths with code T50.9, but without codes T36-T50.8
 ```{r}
 # among those classified as overdose deaths (by code in level 1), look for any death with a T509 code  
 nine_temp <- one_c[(one_c$ra1 == "T509" | one_c$ra2 == "T509" | one_c$ra3 == "T509" | one_c$ra4 == "T509" | one_c$ra5 == "T509" | one_c$ra6 == "T509" | one_c$ra7 == "T509" | one_c$ra8 == "T509" | one_c$ra9 == "T509" | one_c$ra10 == "T509" | one_c$ra11 == "T509"),]
@@ -241,8 +241,8 @@ ten_a <- ten_c[(ten_c$deathmo >= 1 & ten_c$deathmo <=6),]
 ten_b <- ten_c[(ten_c$deathmo >= 7 & ten_c$deathmo <=12),]
 ```
 
-# Level 3
-## get number of meth related & meth/heroin related deaths using fields: 135, 137, 139, 141, 178
+## Level 3
+### get number of meth related & meth/heroin related deaths using fields: 135, 137, 139, 141, 178
 
 ### meth
 ```{r}
@@ -284,7 +284,7 @@ twelve_a <- twelve_c[(twelve_c$deathmo >= 1 & twelve_c$deathmo <=6),]
 twelve_b <- twelve_c[(twelve_c$deathmo >= 7 & twelve_c$deathmo <=12),]
 ```
 
-## meth and heroin 
+### meth and heroin 
 ```{r}
 heroin_key <- "heroin"
 
