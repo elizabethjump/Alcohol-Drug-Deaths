@@ -1,0 +1,324 @@
+---
+title: "2017 drug deaths"
+author: "Beth Jump"
+date: "June 26, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### set up the environment
+```{r }
+# check to see the default library that's set
+.libPaths()
+
+# can select the primary libpath using: 
+.libPaths(.libPaths()[2])
+
+# install and save these packages:
+install.packages(c("icd", "stringr", "dplyr", "sas7bdat", "eeptools"))
+library("icd") 
+library("stringr") 
+library("dplyr")
+library("sas7bdat")
+library("eeptools")
+```
+
+## set up file paths you'll need:
+```{r}
+# file paths for: location of resident death dataset, location to save deaths for level 1,
+res_path <- "J:/Beth/Death Data/Resident death data sets/2016_resident_deaths.txt"
+level_one <- ""
+```
+
+# read in cleaned data sets that you created using a cleaning script (either VRBIS or VRBIS + MCOD)
+```{r}
+comb_deaths <- read.csv(res_path)
+```
+
+# do some additional cleaning so the following steps work
+```{r}
+# make the icd_num field only 2 characters
+comb_deaths$icd_num <- as.numeric(substring(comb_deaths$icd_num,1,2))
+
+# make sure the multiple cause codes only have four characters (no extra spaces)
+comb_deaths$ra1 <- as.character(substring(comb_deaths$ra1,1,4)) 
+comb_deaths$ra2 <- as.character(substring(comb_deaths$ra2,1,4)) 
+comb_deaths$ra3 <- as.character(substring(comb_deaths$ra3,1,4)) 
+comb_deaths$ra4 <- as.character(substring(comb_deaths$ra4,1,4)) 
+comb_deaths$ra5 <- as.character(substring(comb_deaths$ra5,1,4)) 
+comb_deaths$ra6 <- as.character(substring(comb_deaths$ra6,1,4)) 
+comb_deaths$ra7 <- as.character(substring(comb_deaths$ra7,1,4)) 
+comb_deaths$ra8 <- as.character(substring(comb_deaths$ra8,1,4)) 
+comb_deaths$ra9 <- as.character(substring(comb_deaths$ra9,1,4)) 
+comb_deaths$ra10 <- as.character(substring(comb_deaths$ra10,1,4)) 
+comb_deaths$ra11 <- as.character(substring(comb_deaths$ra11,1,4)) 
+```
+
+# LEVEL 1: Get counts 
+### find all deaths with a primary code of: X40-X44, X60-X64, X85, Y10-Y14
+```{r}
+# add a variabe for the drug deaths
+comb_deaths$drug_rltd <- ifelse(comb_deaths$icd_char == "X" & comb_deaths$icd_num >=40 & comb_deaths$icd_num <= 44, "X40-X44", NA)
+comb_deaths$drug_rltd <- ifelse(comb_deaths$icd_char == "X" & comb_deaths$icd_num >=60 & comb_deaths$icd_num <= 64, "X60-X64", comb_deaths$drug_rltd)
+comb_deaths$drug_rltd <- ifelse(comb_deaths$icd_char == "X" & comb_deaths$icd_num == 85, "X85", comb_deaths$drug_rltd)
+comb_deaths$drug_rltd <- ifelse(comb_deaths$icd_char == "Y" & comb_deaths$icd_num >=10 & comb_deaths$icd_num <= 14, "Y10-Y14", comb_deaths$drug_rltd)
+
+# make a new data frame with only those deaths
+one_c <- comb_deaths[!is.na(comb_deaths$drug_rltd),]
+```
+
+### look at causes of death that either have an underlying cause code for overdose OR mention drugs in one of the free text fields
+```{r}
+# make a list of keywords for drugs
+drug_key <- c("amphetamine|cocaine|codeine|'drug use'|fentanyl|gabapentin|hydrocodone|hydromorphone|methadone|methamphetamine|morphine|oxycodone|oxymorphone|tapentado|tramadol")
+
+# look at the first cause of death field
+drug_135 <- comb_deaths[grep(paste(drug_key,collapse="|"), comb_deaths$causeOfDeath_135, ignore.case = T),]
+drug_137 <- comb_deaths[grep(paste(drug_key,collapse="|"), comb_deaths$causeOfDeath1_137, ignore.case = T),]
+drug_139 <- comb_deaths[grep(paste(drug_key,collapse="|"), comb_deaths$causeOfDeath2_139, ignore.case = T),]
+drug_141 <- comb_deaths[grep(paste(drug_key,collapse="|"), comb_deaths$causeOfDeath3_141, ignore.case = T),]
+drug_151 <- comb_deaths[grep(paste(drug_key,collapse="|"), comb_deaths$otherSigCond_151, ignore.case = T),]
+
+# combine all together to get a list of all deaths with a reference to overdose or drugs in the description
+drug_text <- rbind(drug_135, drug_137, drug_139, drug_141, drug_151, one_c, stringsAsFactors = F)
+
+# use unique function to get rid of duplicates
+two_c <- unique(drug_text)
+```
+
+# split into half year increments
+```{r}
+# principal codes
+one_a <- one_c[(one_c$deathmo >= 1 & one_c$deathmo <=6),]
+one_b <- one_c[(one_c$deathmo >= 7 & one_c$deathmo <=12),]
+
+# residents
+two_a <- two_c[(two_c$deathmo >= 1 & two_c$deathmo <=6),]
+two_b <- two_c[(two_c$deathmo >= 7 & two_c$deathmo <=12),]
+```
+
+## look at R99 causes of death (if you want)
+```{r}
+R99 <- comb_deaths[comb_deaths$finalICDCode_144 == "R99",]
+```
+
+## write to file
+```{r}
+write.csv(drug_text_code, level_one)
+```
+
+# LEVEL 2: Multiple causes of death
+## you need to have multiple cause of death information for this level 
+
+## get number of deaths with code T43.6
+```{r}
+# among those classified as overdose deaths (by code in level 1), find those with a T436 code
+three_c <- one_c[(one_c$ra1 == "T436" | one_c$ra2 == "T436" | one_c$ra3 == "T436" | one_c$ra4 == "T436" | one_c$ra5 == "T436" | one_c$ra6 == "T436" | one_c$ra7 == "T436" | one_c$ra8 == "T436" | one_c$ra9 == "T436" | one_c$ra10 == "T436" | one_c$ra11 == "T436"),]
+three_c <- three_c[!is.na(three_c$fname_3),]
+
+# among all deaths, look for any death with a T436 code  
+four_c <- comb_deaths[(comb_deaths$ra1 == "T436" | comb_deaths$ra2 == "T436" | comb_deaths$ra3 == "T436" | comb_deaths$ra4 == "T436" | comb_deaths$ra5 == "T436" | comb_deaths$ra6 == "T436" | comb_deaths$ra7 == "T436" | comb_deaths$ra8 == "T436" | comb_deaths$ra9 == "T436" | comb_deaths$ra10 == "T436" | comb_deaths$ra11 == "T436"),]
+four_c <- four_c[!is.na(four_c$fname_3),]
+
+# split out by month
+three_a <- three_c[(three_c$deathmo >= 1 & three_c$deathmo <=6),]
+three_b <- three_c[(three_c$deathmo >= 7 & three_c$deathmo <=12),]
+
+four_a <- four_c[(four_c$deathmo >= 1 & four_c$deathmo <=6),]
+four_b <- four_c[(four_c$deathmo >= 7 & four_c$deathmo <=12),]
+```
+
+## get number of deaths with code T40.1
+```{r}
+# among those classified as overdose deaths (by code in level 1), look for those with T401 code
+five_c <- one_c[(one_c$ra1 == "T401" | one_c$ra2 == "T401" | one_c$ra3 == "T401" | one_c$ra4 == "T401" | one_c$ra5 == "T401" | one_c$ra6 == "T401" | one_c$ra7 == "T401" | one_c$ra8 == "T401" | one_c$ra9 == "T401" | one_c$ra10 == "T401" | one_c$ra11 == "T401"),]
+five_c <- five_c[!is.na(five_c$fname_3),]
+
+# among all deaths, look for any death with a T401 code  
+six_c <- comb_deaths[(comb_deaths$ra1 == "T401" | comb_deaths$ra2 == "T401" | comb_deaths$ra3 == "T401" | comb_deaths$ra4 == "T401" | comb_deaths$ra5 == "T401" | comb_deaths$ra6 == "T401" | comb_deaths$ra7 == "T401" | comb_deaths$ra8 == "T401" | comb_deaths$ra9 == "T401" | comb_deaths$ra10 == "T401" | comb_deaths$ra11 == "T401"),]
+six_c <- six_c[!is.na(six_c$fname_3),]
+
+# split out by month
+five_a <- five_c[(five_c$deathmo >= 1 & five_c$deathmo <=6),]
+five_b <- five_c[(five_c$deathmo >= 7 & five_c$deathmo <=12),]
+
+six_a <- six_c[(six_c$deathmo >= 1 & six_c$deathmo <=6),]
+six_b <- six_c[(six_c$deathmo >= 7 & six_c$deathmo <=12),]
+```
+
+## get number of deaths with code T40.4
+```{r}
+# among those classified as overdose deaths (by code in level 1), look for those with T404 code
+seven_c <- one_c[(one_c$ra1 == "T404" | one_c$ra2 == "T404" | one_c$ra3 == "T404" | one_c$ra4 == "T404" | one_c$ra5 == "T404" | one_c$ra6 == "T404" | one_c$ra7 == "T404" | one_c$ra8 == "T404" | one_c$ra9 == "T404" | one_c$ra10 == "T404" | one_c$ra11 == "T404"),]
+seven_c <- seven_c[!is.na(seven_c$fname_3),]
+
+# among all deaths, look for any death with a T404 code  
+eight_c <- comb_deaths[(comb_deaths$ra1 == "T404" | comb_deaths$ra2 == "T404" | comb_deaths$ra3 == "T404" | comb_deaths$ra4 == "T404" | comb_deaths$ra5 == "T404" | comb_deaths$ra6 == "T404" | comb_deaths$ra7 == "T404" | comb_deaths$ra8 == "T404" | comb_deaths$ra9 == "T404" | comb_deaths$ra10 == "T404" | comb_deaths$ra11 == "T404"),]
+eight_c <- eight_c[!is.na(eight_c$fname_3),]
+
+# split out by month
+seven_a <- seven_c[(seven_c$deathmo >= 1 & seven_c$deathmo <=6),]
+seven_b <- seven_c[(seven_c$deathmo >= 7 & seven_c$deathmo <=12),]
+
+eight_a <- eight_c[(eight_c$deathmo >= 1 & eight_c$deathmo <=6),]
+eight_b <- eight_c[(eight_c$deathmo >= 7 & eight_c$deathmo <=12),]
+```
+
+## get number of deaths with code T50.9, but without codes T36-T50.8
+```{r}
+# among those classified as overdose deaths (by code in level 1), look for any death with a T509 code  
+nine_temp <- one_c[(one_c$ra1 == "T509" | one_c$ra2 == "T509" | one_c$ra3 == "T509" | one_c$ra4 == "T509" | one_c$ra5 == "T509" | one_c$ra6 == "T509" | one_c$ra7 == "T509" | one_c$ra8 == "T509" | one_c$ra9 == "T509" | one_c$ra10 == "T509" | one_c$ra11 == "T509"),]
+
+# drop those with a code between T36-T508
+## need to look at each column in turn (ra1-ra11)
+drug_codes <- "T36|T37|T38|T39|T40|T41|T42|T43|T44|T45|T46|T47|T48|T49|T500|T501|T502|T503|T504|T505|T506|T507|T508"
+
+dd_T509_1 <- nine_temp[grep(drug_codes, nine_temp$ra1, ignore.case = T),]
+dd_T509_2 <- nine_temp[grep(drug_codes, nine_temp$ra2, ignore.case = T),]
+dd_T509_3 <- nine_temp[grep(drug_codes, nine_temp$ra3, ignore.case = T),]
+dd_T509_4 <- nine_temp[grep(drug_codes, nine_temp$ra4, ignore.case = T),]
+dd_T509_5 <- nine_temp[grep(drug_codes, nine_temp$ra5, ignore.case = T),]
+dd_T509_6 <- nine_temp[grep(drug_codes, nine_temp$ra6, ignore.case = T),]
+dd_T509_7 <- nine_temp[grep(drug_codes, nine_temp$ra7, ignore.case = T),]
+dd_T509_8 <- nine_temp[grep(drug_codes, nine_temp$ra8, ignore.case = T),]
+dd_T509_9 <- nine_temp[grep(drug_codes, nine_temp$ra9, ignore.case = T),]
+dd_T509_10 <- nine_temp[grep(drug_codes, nine_temp$ra10, ignore.case = T),]
+dd_T509_11 <- nine_temp[grep(drug_codes, nine_temp$ra11, ignore.case = T),]
+
+# subtract each of the datasets from the original T509 one to get cases without other codes
+nine_c <- setdiff(nine_temp, dd_T509_1)
+nine_c <- setdiff(nine_c, dd_T509_2)
+nine_c <- setdiff(nine_c, dd_T509_3)
+nine_c <- setdiff(nine_c, dd_T509_4)
+nine_c <- setdiff(nine_c, dd_T509_5)
+nine_c <- setdiff(nine_c, dd_T509_6)
+nine_c <- setdiff(nine_c, dd_T509_7)
+nine_c <- setdiff(nine_c, dd_T509_8)
+nine_c <- setdiff(nine_c, dd_T509_9)
+nine_c <- setdiff(nine_c, dd_T509_10)
+nine_c <- setdiff(nine_c, dd_T509_11)
+nine_c <- nine_c[!is.na(nine_c$fname_3),]
+
+# among all deaths, look for any death with a T509 code  
+ten_temp <- comb_deaths[(comb_deaths$ra1 == "T509" | comb_deaths$ra2 == "T509" | comb_deaths$ra3 == "T509" | comb_deaths$ra4 == "T509" | comb_deaths$ra5 == "T509" | comb_deaths$ra6 == "T509" | comb_deaths$ra7 == "T509" | comb_deaths$ra8 == "T509" | comb_deaths$ra9 == "T509" | comb_deaths$ra10 == "T509" | comb_deaths$ra11 == "T509"),]
+
+# drop those with a code between T36-T508
+## need to look at each column in turn (ra1-ra11)
+cd_T509_1 <- ten_temp[grep(drug_codes, ten_temp$ra1, ignore.case = T),]
+cd_T509_2 <- ten_temp[grep(drug_codes, ten_temp$ra2, ignore.case = T),]
+cd_T509_3 <- ten_temp[grep(drug_codes, ten_temp$ra3, ignore.case = T),]
+cd_T509_4 <- ten_temp[grep(drug_codes, ten_temp$ra4, ignore.case = T),]
+cd_T509_5 <- ten_temp[grep(drug_codes, ten_temp$ra5, ignore.case = T),]
+cd_T509_6 <- ten_temp[grep(drug_codes, ten_temp$ra6, ignore.case = T),]
+cd_T509_7 <- ten_temp[grep(drug_codes, ten_temp$ra7, ignore.case = T),]
+cd_T509_8 <- ten_temp[grep(drug_codes, ten_temp$ra8, ignore.case = T),]
+cd_T509_9 <- ten_temp[grep(drug_codes, ten_temp$ra9, ignore.case = T),]
+cd_T509_10 <- ten_temp[grep(drug_codes, ten_temp$ra10, ignore.case = T),]
+cd_T509_11 <- ten_temp[grep(drug_codes, ten_temp$ra11, ignore.case = T),]
+
+# subtract each of the datasets from the original T509 one to get cases without other codes
+ten_c <- setdiff(ten_temp, cd_T509_1)
+ten_c <- setdiff(ten_c, cd_T509_2)
+ten_c <- setdiff(ten_c, cd_T509_3)
+ten_c <- setdiff(ten_c, cd_T509_4)
+ten_c <- setdiff(ten_c, cd_T509_5)
+ten_c <- setdiff(ten_c, cd_T509_6)
+ten_c <- setdiff(ten_c, cd_T509_7)
+ten_c <- setdiff(ten_c, cd_T509_8)
+ten_c <- setdiff(ten_c, cd_T509_9)
+ten_c <- setdiff(ten_c, cd_T509_10)
+ten_c <- setdiff(ten_c, cd_T509_11)
+ten_c <- ten_c[!is.na(ten_c$fname_3),]
+
+# split out by month
+nine_a <- nine_c[(nine_c$deathmo >= 1 & nine_c$deathmo <=6),]
+nine_b <- nine_c[(nine_c$deathmo >= 7 & nine_c$deathmo <=12),]
+
+ten_a <- ten_c[(ten_c$deathmo >= 1 & ten_c$deathmo <=6),]
+ten_b <- ten_c[(ten_c$deathmo >= 7 & ten_c$deathmo <=12),]
+```
+
+# Level 3
+## get number of meth related & meth/heroin related deaths using fields: 135, 137, 139, 141, 178
+
+### meth
+```{r}
+# look at only deaths officially coded as overdoses
+meth_key <- "methamphetamine"
+
+drug_135_dd <- one_c[grep(meth_key, one_c$causeOfDeath_135, ignore.case = T),]
+drug_137_dd <- one_c[grep(meth_key, one_c$causeOfDeath1_137, ignore.case = T),]
+drug_139_dd <- one_c[grep(meth_key, one_c$causeOfDeath2_139, ignore.case = T),]
+drug_141_dd <- one_c[grep(meth_key, one_c$causeOfDeath3_141, ignore.case = T),]
+
+# combine all to get a list of deaths with reference to meth
+eleven_temp <- unique(rbind(drug_135_dd, drug_137_dd, drug_139_dd, drug_141_dd, stringsAsFactors = F))
+
+# among those classified as overdose deaths, find those with a T436 code
+eleven_c <- eleven_temp[(eleven_temp$ra1 == "T436" | eleven_temp$ra2 == "T436" | eleven_temp$ra3 == "T436" | eleven_temp$ra4 == "T436" | eleven_temp$ra5 == "T436" | eleven_temp$ra6 == "T436" | eleven_temp$ra7 == "T436" | eleven_temp$ra8 == "T436" | eleven_temp$ra9 == "T436" | eleven_temp$ra10 == "T436" | eleven_temp$ra11 == "T436"),]
+eleven_c <- eleven_c[!is.na(eleven_c$fname_3),]
+
+# look at all deaths in the county that mention meth in a free text field
+drug_135 <- comb_deaths[grep(meth_key, comb_deaths$causeOfDeath_135, ignore.case = T),]
+drug_137 <- comb_deaths[grep(meth_key, comb_deaths$causeOfDeath1_137, ignore.case = T),]
+drug_139 <- comb_deaths[grep(meth_key, comb_deaths$causeOfDeath2_139, ignore.case = T),]
+drug_141 <- comb_deaths[grep(meth_key, comb_deaths$causeOfDeath3_141, ignore.case = T),]
+drug_151 <- comb_deaths[grep(meth_key, comb_deaths$otherSigCond_151, ignore.case = T),]
+
+# combine all to get a list of deaths with reference to meth
+twelve_temp <- unique(rbind(drug_135, drug_137, drug_139, drug_141, stringsAsFactors =F))
+
+# look for deaths with free text mention of meth that also have T436 in ra
+twelve_c <- twelve_temp[(twelve_temp$ra1 == "T436" | twelve_temp$ra2 == "T436" | twelve_temp$ra3 == "T436" | twelve_temp$ra4 == "T436" | twelve_temp$ra5 == "T436" | twelve_temp$ra6 == "T436" | twelve_temp$ra7 == "T436" | twelve_temp$ra8 == "T436" | twelve_temp$ra9 == "T436" | twelve_temp$ra10 == "T436" | twelve_temp$ra11 == "T436"),]
+twelve_c <- twelve_c[!is.na(twelve_c$fname_3),]
+
+
+# split up by month
+eleven_a <- eleven_c[(eleven_c$deathmo >= 1 & eleven_c$deathmo <=6),]
+eleven_b <- eleven_c[(eleven_c$deathmo >= 7 & eleven_c$deathmo <=12),]
+
+twelve_a <- twelve_c[(twelve_c$deathmo >= 1 & twelve_c$deathmo <=6),]
+twelve_b <- twelve_c[(twelve_c$deathmo >= 7 & twelve_c$deathmo <=12),]
+```
+
+## meth and heroin 
+```{r}
+heroin_key <- "heroin"
+
+# among deaths officially coded as overdoses find all deaths mentioning meth & heroin by subsetting the meth files from above
+mh_135_dd <- eleven_c[grep(heroin_key, eleven_c$causeOfDeath_135, ignore.case = T),]
+mh_137_dd <- eleven_c[grep(heroin_key, eleven_c$causeOfDeath1_137, ignore.case = T),]
+mh_139_dd <- eleven_c[grep(heroin_key, eleven_c$causeOfDeath2_139, ignore.case = T),]
+mh_141_dd <- eleven_c[grep(heroin_key, eleven_c$causeOfDeath3_141, ignore.case = T),]
+mh_151_dd <- eleven_c[grep(heroin_key, eleven_c$otherSigCond_151, ignore.case = T),]
+
+# combine all to get a list of deaths with reference to meth
+thirteen_c <- unique(rbind(mh_135_dd, mh_137_dd, mh_139_dd, mh_141_dd, stringsAsFactors = F))
+thirteen_c <- thirteen_c[!is.na(thirteen_c$fname_3),]
+
+# among all deaths, find all deaths mentioning meth & heroin by subsetting the meth files from above
+mh_135 <- twelve_c[grep(heroin_key, twelve_c$causeOfDeath_135, ignore.case = T),]
+mh_137 <- twelve_c[grep(heroin_key, twelve_c$causeOfDeath1_137, ignore.case = T),]
+mh_139 <- twelve_c[grep(heroin_key, twelve_c$causeOfDeath2_139, ignore.case = T),]
+mh_141 <- twelve_c[grep(heroin_key, twelve_c$causeOfDeath3_141, ignore.case = T),]
+mh_151 <- eleven_c[grep(heroin_key, twelve_c$otherSigCond_151, ignore.case = T),]
+
+# combine all to get a list of deaths with reference to meth
+fourteen_c <- unique(rbind(mh_135, mh_137, mh_139, mh_141, stringsAsFactors =F))
+fourteen_c <- fourteen_c[!is.na(fourteen_c$fname_3),]
+
+# split up by month
+thirteen_a <- thirteen_c[(thirteen_c$deathmo >= 1 & thirteen_c$deathmo <=6),]
+thirteen_b <- thirteen_c[(thirteen_c$deathmo >= 7 & thirteen_c$deathmo <=12),]
+
+fourteen_a <- fourteen_c[(fourteen_c$deathmo >= 1 & fourteen_c$deathmo <=6),]
+fourteen_b <- fourteen_c[(fourteen_c$deathmo >= 7 & fourteen_c$deathmo <=12),]
+```
+
+## remove extra objects so you only have the dataframes you need for the spreadsheet
+```{r}
+rm(cd_T509_1,cd_T509_2, cd_T509_3, cd_T509_4, cd_T509_5, cd_T509_6, cd_T509_7, cd_T509_8, cd_T509_9, cd_T509_10, cd_T509_11, dd_T509_1, dd_T509_2, dd_T509_3, dd_T509_4, dd_T509_5, dd_T509_6, dd_T509_7, dd_T509_8, dd_T509_9, dd_T509_10, dd_T509_11, drug_135, drug_135_dd, drug_137, drug_137_dd, drug_139, drug_139_dd, drug_141, drug_141_dd, drug_151, drug_text, mh_135, mh_135_dd, mh_137, mh_137_dd, mh_139, mh_139_dd, mh_141, mh_141_dd, mh_151, mh_151_dd, R99)
+```
