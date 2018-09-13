@@ -17,8 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 .libPaths(.libPaths()[2])
 
 # install and save these packages:
-install.packages(c("icd", "stringr", "dplyr", "sas7bdat", "eeptools"))
-library("icd") 
+install.packages(c("stringr", "dplyr", "sas7bdat", "eeptools"))
 library("stringr") 
 library("dplyr")
 library("sas7bdat")
@@ -28,10 +27,10 @@ library("eeptools")
 ## set up file paths you'll need:
 ```{r}
 # file paths for: location of resident death dataset, location to save deaths with primary code K70, location to save deaths with K70 or text for alcohol and location to save deaths with primary code, text or multiple code K70
-res_path <- ""
-prim_code <- ""
-prim_code_or_text <- ""
-any_code_or_text <- ""
+res_path <- "C:/Users/ejump/Desktop/Death Data/Resident death data sets/2016_resident_deaths.txt"
+one_c_dataset <- "C:/Users/ejump/Desktop/1c2016.csv"
+two_c_dataset <- "C:/Users/ejump/Desktop/2c2016.csv"
+three_c_dataset <- "C:/Users/ejump/Desktop/3c2016.csv"
 ```
 
 ## read in cleaned data sets that you created using a cleaning script (either VRBIS or VRBIS + MCOD)
@@ -65,7 +64,7 @@ comb_deaths$alcohol <- NA
 comb_deaths$alcohol <- ifelse(comb_deaths$icd_char == "K" & comb_deaths$icd_num == 70, 1, comb_deaths$alcohol)
 
 # make a new data frame with only those deaths
-alc_codes <- comb_deaths[!is.na(comb_deaths$alcohol),]
+one_c <- comb_deaths[!is.na(comb_deaths$alcohol),]
 ```
 
 ## look at alcohol deaths by keywords
@@ -80,10 +79,7 @@ alc_141 <- comb_deaths[grep(paste(alc_key,collapse="|"), comb_deaths$causeOfDeat
 alc_151 <- comb_deaths[grep(paste(alc_key,collapse="|"), comb_deaths$otherSigCond_151, ignore.case = T),]
 
 # combine all together to get a list of all deaths with a reference to alcohol in the description
-alc_text <- rbind(alc_135, alc_137, alc_139, alc_141, alc_151, stringsAsFactors = F)
-
-# get rid of duplicates
-alc_text <- unique(alc_text)
+alc_text <- unique(rbind(alc_135, alc_137, alc_139, alc_141, alc_151, stringsAsFactors = F))
 ```
 
 ## identify deaths with a K70 in any of the multiple cause fields
@@ -93,32 +89,29 @@ alcohol_K70 <- comb_deaths[(comb_deaths$ra1 == "K70" | comb_deaths$ra2 == "K70" 
 
 ## look at alcohol deaths by underlying code and keyword and multiple cause code
 ```{r}
-alc_code_or_text <- rbind(alc_codes, alc_text, stringsAsFactors = F)
+two_c <- unique(rbind(one_c, alc_text, stringsAsFactors = F))
 
-alc_comb <- rbind(alc_code_or_text, alcohol_K70, stringsAsFactors = F)
-
-# use unique function to get rid of duplicates
-alc_comb_final <- unique(alc_comb)
+three_c <- unique(rbind(two_c, alcohol_K70, stringsAsFactors = F))
 ```
 
 ## split into 6 month increments
 ```{r}
-# residents with underlying code K70, K73, K74
-code_jan <- alc_codes[(alc_codes$deathmo >=1 & alc_codes$deathmo <=6),]
-code_jul <- alc_codes[(alc_codes$deathmo >=7 & alc_codes$deathmo <=12),]
+# residents with underlying code K70
+one_a <- one_c[(one_c$deathmo >=1 & one_c$deathmo <=6),]
+one_b <- one_c[(one_c$deathmo >=7 & one_c$deathmo <=12),]
   
 # residents with underlying + text
-codetext_jan <- alc_code_or_text[(alc_code_or_text$deathmo >=1 & alc_code_or_text$deathmo <=6),]
-codetext_jul <- alc_code_or_text[(alc_code_or_text$deathmo >=7 & alc_code_or_text$deathmo <=12),]
+two_a <- two_c[(two_c$deathmo >=1 & two_c$deathmo <=6),]
+two_b <- two_c[(two_c$deathmo >=7 & two_c$deathmo <=12),]
 
 # residents with underlying + text + mcod 
-codetmcod_jan <- alc_comb_final[(alc_comb_final$deathmo >=1 & alc_comb_final$deathmo <=6),]
-codetmcod_jul <- alc_comb_final[(alc_comb_final$deathmo >=7 & alc_comb_final$deathmo <=12),]
+three_a <- three_c[(three_c$deathmo >=1 & three_c$deathmo <=6),]
+three_b <- three_c[(three_c$deathmo >=7 & three_c$deathmo <=12),]
 ```
 
 ## create files with deaths identified above 
 ```{r}
-write.csv(alc_codes, prim_code)
-write.csv(alc_code_or_text, prim_code_or_text)
-write.csv(alc_comb_final, any_code_or_text)
+write.csv(one_c, one_c_dataset)
+write.csv(two_c, two_c_dataset)
+write.csv(three_c, three_c_dataset)
 ```
