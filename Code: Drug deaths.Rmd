@@ -29,7 +29,7 @@ library("eeptools")
 ## set up file paths you'll need:
 ```{r}
 # file paths for: location of resident death dataset, location to save deaths for level 1,
-res_path <- "J:/Beth/Death Data/Resident death data sets/2016_resident_deaths.txt"
+res_path <- ""
 level_one <- ""
 ```
 
